@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.next-stale-*/
+out/
+.env
+.env.local
+.env.*.local
+coverage/
+*.log
+*.tsbuildinfo
+.vercel
+.env*
