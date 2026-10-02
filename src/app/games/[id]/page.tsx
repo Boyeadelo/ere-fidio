@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { BagIcon, LockIcon, TagIcon, TruckIcon } from "@/components/Icons";
 import ProductCard from "@/components/ProductCard";
 import ProductCover from "@/components/ProductCover";
@@ -14,7 +15,9 @@ import {
   type Product,
 } from "@/lib/store";
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+export default function ProductPage() {
+  const params = useParams<{ id: string }>();
+  const productId = params.id;
   const [product, setProduct] = useState<Product | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
   const [quantity, setQuantity] = useState(1);
@@ -29,7 +32,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         .select(
           "id, title, platform, price_kobo, description, stock, image_url, created_at",
         )
-        .eq("id", params.id)
+        .eq("id", productId)
         .maybeSingle(),
       supabase
         .from("products")
@@ -38,14 +41,14 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         )
         .eq("is_published", true)
         .eq("is_archived", false)
-        .neq("id", params.id)
+        .neq("id", productId)
         .limit(4),
     ]).then(([current, suggestions]) => {
       setProduct(current.data as Product | null);
       setRelated((suggestions.data as Product[] | null) ?? []);
       setLoading(false);
     });
-  }, [params.id]);
+  }, [productId]);
 
   const add = () => {
     if (!product || product.stock < 1) return;
