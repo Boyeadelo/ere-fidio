@@ -26,14 +26,21 @@ export default function CheckoutScreen() {
   const fallbackTotal = cart.reduce((sum, item) => sum + item.price_kobo * item.quantity, 0);
 
   useEffect(() => {
+    setQuote(null);
     if (!cart.length) return;
-    fetch(`${webUrl}/api/checkout/quote`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, discountCode }),
-    }).then(async (response) => {
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
-      setQuote(result); setStatus("");
-    }).catch((error: Error) => setStatus(error.message));
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(`${webUrl}/api/checkout/quote`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, discountCode }), signal: controller.signal,
+      }).then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
+        setQuote(result); setStatus("");
+      }).catch((error: Error) => {
+        if (error.name !== "AbortError") { setQuote(null); setStatus(error.message); }
+      });
+    }, 250);
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [discountCode, items, cart.length]);
 
   const pay = async () => {
@@ -93,7 +100,7 @@ export default function CheckoutScreen() {
         <View style={styles.panel}><Text style={styles.sectionTitle}>Order summary</Text>
           {cart.map((item) => <View key={item.id} style={styles.row}><Text style={styles.itemText}>{item.title} × {item.quantity}</Text><Text style={styles.itemTotal}>{formatNaira(item.price_kobo * item.quantity)}</Text></View>)}
           <Field label="Discount code (optional)" value={discountCode} onChangeText={(value) => setDiscountCode(value.toUpperCase())} autoCapitalize="characters" />
-          {!!quote?.discountKobo && <View style={styles.row}><Text style={styles.discount}>Discount</Text><Text style={styles.discount}>−{formatNaira(quote.discountKobo)}</Text></View>}
+          {!!quote?.discountKobo && <View style={styles.row}><Text style={styles.discount}>Discount ({formatDiscountPercent(quote)}%)</Text><Text style={styles.discount}>−{formatNaira(quote.discountKobo)}</Text></View>}
           <View style={[styles.row, styles.totalRow]}><Text style={styles.totalLabel}>Total</Text><Text style={styles.total}>{formatNaira(quote?.totalKobo ?? fallbackTotal)}</Text></View>
         </View>
         {!!status && <Text style={styles.status}>{status}</Text>}
@@ -109,6 +116,11 @@ export default function CheckoutScreen() {
 type FieldProps = React.ComponentProps<typeof TextInput> & { label: string };
 function Field({ label, ...props }: FieldProps) {
   return <View style={styles.fieldWrap}><Text style={styles.label}>{label}</Text><TextInput placeholderTextColor="#897F73" style={[styles.input, props.multiline && styles.multiline]} {...props} /></View>;
+}
+
+function formatDiscountPercent(quote: Quote) {
+  const percentage = (quote.discountKobo / quote.subtotalKobo) * 100;
+  return Number.isInteger(percentage) ? percentage.toFixed(0) : percentage.toFixed(1);
 }
 
 const styles = StyleSheet.create({

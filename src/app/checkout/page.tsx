@@ -30,10 +30,13 @@ export default function CheckoutPage() {
   }, [cartLoading, user]);
 
   useEffect(() => {
-    if (cart.length)
-      fetch("/api/checkout/quote", {
+    setQuote(null);
+    if (!cart.length) return;
+    const controller = new AbortController();
+    fetch("/api/checkout/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           items: cart.map(({ id, quantity }) => ({ id, quantity })),
           discountCode: window.localStorage.getItem(DISCOUNT_KEY) || "",
@@ -44,7 +47,13 @@ export default function CheckoutPage() {
           if (!response.ok) throw new Error(result.error);
           setQuote(result);
         })
-        .catch((error: Error) => setStatus(error.message));
+        .catch((error: Error) => {
+          if (error.name !== "AbortError") {
+            setQuote(null);
+            setStatus(error.message);
+          }
+        });
+    return () => controller.abort();
   }, [cart]);
 
   useEffect(() => {
@@ -316,7 +325,7 @@ export default function CheckoutPage() {
               </div>
               {(quote?.discountKobo || 0) > 0 && (
                 <div>
-                  <dt>Discount · {quote?.discountCode}</dt>
+                  <dt>Discount ({formatDiscountPercent(quote!)}) · {quote?.discountCode}</dt>
                   <dd>− {formatNaira(quote!.discountKobo)}</dd>
                 </div>
               )}
@@ -374,4 +383,11 @@ export default function CheckoutPage() {
       </div>
     </main>
   );
+}
+
+function formatDiscountPercent(quote: Quote) {
+  const percentage = (quote.discountKobo / quote.subtotalKobo) * 100;
+  return Number.isInteger(percentage)
+    ? `${percentage.toFixed(0)}%`
+    : `${percentage.toFixed(1)}%`;
 }
