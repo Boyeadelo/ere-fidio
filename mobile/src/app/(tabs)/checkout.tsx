@@ -1,7 +1,7 @@
 import * as AuthSession from "expo-auth-session";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatNaira } from "../../lib/types";
@@ -22,25 +22,28 @@ export default function CheckoutScreen() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+  const quoteRequest = useRef(0);
   const items = useMemo(() => cart.map(({ id, quantity }) => ({ id, quantity })), [cart]);
   const fallbackTotal = cart.reduce((sum, item) => sum + item.price_kobo * item.quantity, 0);
 
   useEffect(() => {
+    const requestId = ++quoteRequest.current;
     setQuote(null);
+    setStatus("");
     if (!cart.length) return;
-    const controller = new AbortController();
     const timer = setTimeout(() => {
       fetch(`${webUrl}/api/checkout/quote`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, discountCode }), signal: controller.signal,
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, discountCode }),
       }).then(async (response) => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error);
+        if (requestId !== quoteRequest.current) return;
         setQuote(result); setStatus("");
       }).catch((error: Error) => {
-        if (error.name !== "AbortError") { setQuote(null); setStatus(error.message); }
+        if (requestId === quoteRequest.current) { setQuote(null); setStatus(error.message); }
       });
-    }, 250);
-    return () => { clearTimeout(timer); controller.abort(); };
+    }, 500);
+    return () => clearTimeout(timer);
   }, [discountCode, items, cart.length]);
 
   const pay = async () => {
