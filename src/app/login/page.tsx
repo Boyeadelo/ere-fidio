@@ -22,11 +22,10 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL;
       const browserOrigin = window.location.origin.replace("0.0.0.0", "172.19.122.9");
       const { error: signInError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${configuredOrigin || browserOrigin}/auth/callback?next=${encodeURIComponent(nextPath)}` },
+        options: { redirectTo: `${browserOrigin}/auth/callback?next=${encodeURIComponent(nextPath)}` },
       });
       if (signInError) setError(signInError.message);
     } catch {
