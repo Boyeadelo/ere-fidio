@@ -1,16 +1,18 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
-import { supabase } from "../../lib/supabase";
-import { formatNaira, type Product } from "../../lib/types";
-import { useCart } from "../../providers/CartProvider";
-import { colors } from "../../theme";
+import { ActivityIndicator, Alert, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { supabase } from "../../../lib/supabase";
+import { formatNaira, type Product } from "../../../lib/types";
+import { useCart } from "../../../providers/CartProvider";
+import { colors } from "../../../theme";
 
 export default function GameScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
   const { addItem } = useCart();
   useEffect(() => {
     if (!id) return;
@@ -34,7 +36,25 @@ export default function GameScreen() {
             <Text style={styles.quantityValue}>{quantity}</Text>
             <Pressable onPress={() => setQuantity(Math.min(product.stock || 1, quantity + 1))}><Text style={styles.quantityButton}>+</Text></Pressable>
           </View>
-          <Pressable disabled={!product.stock} style={[styles.add, !product.stock && styles.disabled]} onPress={() => addItem(product, quantity)}><Text style={styles.addText}>Add to cart</Text></Pressable>
+          <Pressable
+            disabled={!product.stock || adding}
+            style={[styles.add, (!product.stock || adding) && styles.disabled]}
+            onPress={async () => {
+              setAdding(true);
+              setAdded(false);
+              try {
+                await addItem(product, quantity);
+                setAdded(true);
+                setTimeout(() => setAdded(false), 2200);
+              } catch {
+                Alert.alert("Could not update cart", "Please try again.");
+              } finally {
+                setAdding(false);
+              }
+            }}
+          >
+            {adding ? <ActivityIndicator color="white" /> : <Text style={styles.addText}>{added ? "Added to cart ✓" : "Add to cart"}</Text>}
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>

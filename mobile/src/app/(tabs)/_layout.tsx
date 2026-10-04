@@ -1,9 +1,8 @@
-import { Tabs } from "expo-router";
-import { type ColorValue, Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router, Tabs } from "expo-router";
+import { Pressable } from "react-native";
 import { colors } from "../../theme";
 import { useCart } from "../../providers/CartProvider";
-
-const Icon = ({ text, color }: { text: string; color: ColorValue }) => <Text style={{ color, fontSize: 17, fontWeight: "900" }}>{text}</Text>;
 
 export default function TabsLayout() {
   const { count } = useCart();
@@ -16,9 +15,18 @@ export default function TabsLayout() {
       tabBarInactiveTintColor: colors.muted,
       tabBarStyle: { backgroundColor: colors.paper, borderTopColor: colors.border, height: 68, paddingBottom: 8 },
     }}>
-      <Tabs.Screen name="index" options={{ title: "Shop", headerTitle: "èrè fídíò", tabBarIcon: ({ color }) => <Icon text="◈" color={color} /> }} />
-      <Tabs.Screen name="cart" options={{ title: "Cart", tabBarBadge: count || undefined, tabBarIcon: ({ color }) => <Icon text="▣" color={color} /> }} />
-      <Tabs.Screen name="account" options={{ title: "Account", tabBarIcon: ({ color }) => <Icon text="●" color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: "Shop", headerTitle: "èrè fídíò", tabBarIcon: ({ color, size }) => <Ionicons name="game-controller-outline" color={color} size={size} /> }} />
+      <Tabs.Screen name="cart" options={{ title: "Cart", tabBarBadge: count || undefined, tabBarIcon: ({ color, size }) => <Ionicons name="cart-outline" color={color} size={size} /> }} />
+      <Tabs.Screen name="account" options={{ title: "Account", tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" color={color} size={size} /> }} />
+      <Tabs.Screen name="game/[id]" options={{
+        href: null,
+        title: "Game details",
+        headerLeft: () => (
+          <Pressable accessibilityLabel="Back to shop" onPress={() => router.back()} style={{ paddingHorizontal: 16 }}>
+            <Ionicons name="arrow-back" color={colors.forest} size={24} />
+          </Pressable>
+        ),
+      }} />
     </Tabs>
   );
 }

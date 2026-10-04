@@ -9,7 +9,6 @@ export default function RootLayout() {
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerStyle: { backgroundColor: colors.cream }, headerTintColor: colors.forest, headerShadowVisible: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="game/[id]" options={{ title: "Game details" }} />
         <Stack.Screen name="login" options={{ title: "Sign in", presentation: "modal" }} />
         <Stack.Screen name="checkout" options={{ title: "Secure checkout" }} />
       </Stack>

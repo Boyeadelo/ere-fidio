@@ -1,11 +1,14 @@
 import { router } from "expo-router";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useCart } from "../providers/CartProvider";
 import { colors } from "../theme";
 import { formatNaira, type Product } from "../lib/types";
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
   return (
     <View style={styles.card}>
       <Pressable style={styles.art} onPress={() => router.push(`/game/${product.id}`)}>
@@ -33,11 +36,23 @@ export function ProductCard({ product }: { product: Product }) {
           </View>
           <Pressable
             accessibilityRole="button"
-            disabled={product.stock < 1}
-            style={({ pressed }) => [styles.button, pressed && styles.pressed, product.stock < 1 && styles.disabled]}
-            onPress={() => addItem(product)}
+            disabled={product.stock < 1 || adding}
+            style={({ pressed }) => [styles.button, pressed && styles.pressed, (product.stock < 1 || adding) && styles.disabled]}
+            onPress={async () => {
+              setAdding(true);
+              setAdded(false);
+              try {
+                await addItem(product);
+                setAdded(true);
+                setTimeout(() => setAdded(false), 1800);
+              } catch {
+                Alert.alert("Could not update cart", "Please try again.");
+              } finally {
+                setAdding(false);
+              }
+            }}
           >
-            <Text style={styles.buttonText}>Add +</Text>
+            {adding ? <ActivityIndicator color="white" size="small" /> : <Text style={styles.buttonText}>{added ? "Added ✓" : "Add +"}</Text>}
           </Pressable>
         </View>
       </View>
