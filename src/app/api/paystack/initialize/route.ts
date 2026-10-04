@@ -5,7 +5,14 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const email = typeof body.email === "string" ? body.email.trim() : "";
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin}/checkout`;
+    const defaultCallbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin}/checkout`;
+    let callbackUrl = defaultCallbackUrl;
+    if (typeof body.callbackUrl === "string") {
+      const requestedCallback = new URL(body.callbackUrl);
+      const isExpoTunnel = requestedCallback.protocol === "exp:" && requestedCallback.hostname.endsWith(".exp.direct");
+      const isNativeApp = requestedCallback.protocol === "erefidio:";
+      if (isExpoTunnel || isNativeApp) callbackUrl = requestedCallback.toString();
+    }
 
     if (!email) {
       return NextResponse.json({ error: "A valid email is required." }, { status: 400 });

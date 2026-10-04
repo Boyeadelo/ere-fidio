@@ -27,6 +27,16 @@ export default function TabsLayout() {
           </Pressable>
         ),
       }} />
+      <Tabs.Screen name="checkout" options={{
+        href: null,
+        title: "Secure checkout",
+        headerLeft: () => (
+          <Pressable accessibilityLabel="Back to cart" onPress={() => router.back()} style={{ paddingHorizontal: 16 }}>
+            <Ionicons name="arrow-back" color={colors.forest} size={24} />
+          </Pressable>
+        ),
+      }} />
+      <Tabs.Screen name="order-success" options={{ href: null, title: "Order confirmed", headerLeft: () => null }} />
     </Tabs>
   );
 }
