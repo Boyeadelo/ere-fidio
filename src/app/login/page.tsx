@@ -6,9 +6,15 @@ import { useEffect, useState } from "react";
 export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [nextPath, setNextPath] = useState("/");
+  const [reason, setReason] = useState("");
   useEffect(() => {
-    const message = new URLSearchParams(window.location.search).get("error");
+    const params = new URLSearchParams(window.location.search);
+    const message = params.get("error");
     if (message) setError(message);
+    const next = params.get("next");
+    if (next?.startsWith("/")) setNextPath(next);
+    setReason(params.get("reason") || "");
   }, []);
 
   const signInWithGoogle = async () => {
@@ -20,7 +26,7 @@ export default function LoginPage() {
       const browserOrigin = window.location.origin.replace("0.0.0.0", "172.19.122.9");
       const { error: signInError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${configuredOrigin || browserOrigin}/auth/callback` },
+        options: { redirectTo: `${configuredOrigin || browserOrigin}/auth/callback?next=${encodeURIComponent(nextPath)}` },
       });
       if (signInError) setError(signInError.message);
     } catch {
@@ -34,7 +40,7 @@ export default function LoginPage() {
     <main className="login-page">
       <p className="design-eyebrow">èrè fídíò</p>
       <h1>Sign in</h1>
-      <p>Sign in to view your orders. Guest checkout remains available.</p>
+      <p>{reason === "checkout" ? "Sign in to keep this cart, combine it with your saved cart, and continue to checkout." : "Sign in to sync your cart and view your orders on every device."}</p>
       <button className="primary-button" onClick={signInWithGoogle} disabled={loading}>
         {loading ? "Opening Google…" : "Continue with Google"}
       </button>

@@ -13,5 +13,13 @@ export default defineConfig([
       "react-hooks/exhaustive-deps": "off",
     },
   },
-  globalIgnores([".next/**", ".next-stale-*/**", "node_modules/**", "coverage/**"]),
+  globalIgnores([
+    ".next/**",
+    ".next-stale-*/**",
+    "node_modules/**",
+    "coverage/**",
+    "mobile/.expo/**",
+    "mobile/node_modules/**",
+    "mobile/dist/**",
+  ]),
 ]);

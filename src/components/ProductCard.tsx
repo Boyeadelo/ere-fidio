@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { addProductToCart, formatNaira, type Product } from "@/lib/store";
+import { formatNaira, type Product } from "@/lib/store";
 import ProductCover from "./ProductCover";
+import { useCart } from "./CartProvider";
 
 export default function ProductCard({
   product,
@@ -14,11 +15,12 @@ export default function ProductCard({
   compact?: boolean;
 }) {
   const [state, setState] = useState<"idle" | "adding" | "added">("idle");
-  const add = () => {
+  const { addItem } = useCart();
+  const add = async () => {
     if (state !== "idle" || product.stock < 1) return;
     setState("adding");
-    window.setTimeout(() => {
-      addProductToCart(product);
+    window.setTimeout(async () => {
+      await addItem(product);
       setState("added");
       window.setTimeout(() => setState("idle"), 1600);
     }, 220);

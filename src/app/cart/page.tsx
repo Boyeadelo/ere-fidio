@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCart } from "@/components/CartProvider";
 import {
   BagIcon,
   CheckIcon,
@@ -14,9 +15,6 @@ import StoreHeader from "@/components/StoreHeader";
 import {
   DISCOUNT_KEY,
   formatNaira,
-  readCart,
-  type CartItem,
-  writeCart,
 } from "@/lib/store";
 
 type Quote = {
@@ -27,38 +25,24 @@ type Quote = {
 };
 
 export default function CartPage() {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const { cart, setQuantity, removeItem } = useCart();
   const [discountCode, setDiscountCode] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [discountStatus, setDiscountStatus] = useState("");
   const [applying, setApplying] = useState(false);
 
-  useEffect(() => {
-    setCart(readCart());
-    setDiscountCode(window.localStorage.getItem(DISCOUNT_KEY) || "");
-  }, []);
+  useEffect(() => { setDiscountCode(window.localStorage.getItem(DISCOUNT_KEY) || ""); }, []);
   useEffect(() => {
     if (cart.length)
       getQuote(window.localStorage.getItem(DISCOUNT_KEY) || "", false);
   }, [cart]);
-  const save = (next: CartItem[]) => {
-    setCart(next);
-    writeCart(next);
-    if (!next.length) {
+  const updateQuantity = async (id: string, quantity: number) => {
+    await setQuantity(id, quantity);
+    if (cart.length === 1 && quantity <= 0) {
       setQuote(null);
       window.localStorage.removeItem(DISCOUNT_KEY);
     }
   };
-  const updateQuantity = (id: string, quantity: number) =>
-    save(
-      quantity < 1
-        ? cart.filter((item) => item.id !== id)
-        : cart.map((item) =>
-            item.id === id
-              ? { ...item, quantity: Math.min(quantity, item.stock) }
-              : item,
-          ),
-    );
   const items = cart.map(({ id, quantity }) => ({ id, quantity }));
   const fallbackSubtotal = cart.reduce(
     (sum, item) => sum + item.price_kobo * item.quantity,
@@ -160,7 +144,7 @@ export default function CartPage() {
                     <p>Sealed physical disc</p>
                     <button
                       className="remove-link"
-                      onClick={() => updateQuantity(item.id, 0)}
+                      onClick={() => removeItem(item.id)}
                     >
                       <TrashIcon /> <span>Remove</span>
                     </button>

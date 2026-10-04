@@ -1,15 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/components/CartProvider";
 import { LockIcon, ShieldIcon } from "@/components/Icons";
 import ProductCover from "@/components/ProductCover";
-import {
-  CART_KEY,
-  DISCOUNT_KEY,
-  formatNaira,
-  readCart,
-  type CartItem,
-} from "@/lib/store";
+import { DISCOUNT_KEY, formatNaira } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
 
 type Quote = {
@@ -20,20 +16,26 @@ type Quote = {
 };
 
 export default function CheckoutPage() {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const router = useRouter();
+  const { cart, clearCart, user, loading: cartLoading } = useCart();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const completingReference = useRef(false);
 
   useEffect(() => {
-    const current = readCart();
-    setCart(current);
-    if (current.length)
+    if (!cartLoading && !user) {
+      window.location.replace("/login?next=/checkout&reason=checkout");
+    }
+  }, [cartLoading, user]);
+
+  useEffect(() => {
+    if (cart.length)
       fetch("/api/checkout/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: current.map(({ id, quantity }) => ({ id, quantity })),
+          items: cart.map(({ id, quantity }) => ({ id, quantity })),
           discountCode: window.localStorage.getItem(DISCOUNT_KEY) || "",
         }),
       })
@@ -43,10 +45,15 @@ export default function CheckoutPage() {
           setQuote(result);
         })
         .catch((error: Error) => setStatus(error.message));
+  }, [cart]);
+
+  useEffect(() => {
+    if (cartLoading || !user || completingReference.current) return;
     const reference = new URLSearchParams(window.location.search).get(
       "reference",
     );
     if (reference) {
+      completingReference.current = true;
       const pending = window.localStorage.getItem("gamevault-pending-order");
       if (!pending) {
         setStatus("Payment was verified, but the order details are missing.");
@@ -78,17 +85,16 @@ export default function CheckoutPage() {
               customerEmail: pendingOrder.customer.email,
             }),
           );
-          window.localStorage.removeItem(CART_KEY);
           window.localStorage.removeItem(DISCOUNT_KEY);
           window.localStorage.removeItem("gamevault-pending-order");
-          window.location.replace("/order/success");
+          clearCart().then(() => window.location.replace("/order/success"));
         })
         .catch((error: Error) => {
           setStatus(error.message);
           setIsLoading(false);
         });
     }
-  }, []);
+  }, [cartLoading, clearCart, user]);
 
   const fallbackSubtotal = cart.reduce(
     (sum, item) => sum + item.price_kobo * item.quantity,
@@ -99,6 +105,10 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!user) {
+      router.push("/login?next=/checkout&reason=checkout");
+      return;
+    }
     setStatus("");
     setIsLoading(true);
     const formData = new FormData(event.currentTarget);
@@ -329,7 +339,7 @@ export default function CheckoutPage() {
             <button
               className="primary-button paystack-button real-payment-button"
               type="button"
-              disabled={cart.length === 0 || isLoading}
+              disabled={cart.length === 0 || isLoading || cartLoading || !user}
               onClick={() =>
                 document
                   .querySelector<HTMLFormElement>(".customer-panel")
@@ -337,7 +347,9 @@ export default function CheckoutPage() {
               }
             >
               {isLoading && <span className="button-spinner" aria-hidden="true" />}
-              {cart.length === 0
+              {!user
+                ? "Sign in to checkout"
+                : cart.length === 0
                 ? "Cart is empty"
                 : isLoading
                   ? "Opening secure payment…"

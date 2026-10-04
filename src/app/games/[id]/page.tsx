@@ -9,11 +9,11 @@ import StoreFooter from "@/components/StoreFooter";
 import StoreHeader from "@/components/StoreHeader";
 import { createClient } from "@/lib/supabase/client";
 import {
-  addProductToCart,
   formatNaira,
   platformName,
   type Product,
 } from "@/lib/store";
+import { useCart } from "@/components/CartProvider";
 
 export default function ProductPage() {
   const params = useParams<{ id: string }>();
@@ -23,6 +23,7 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
+  const { addItem } = useCart();
 
   useEffect(() => {
     const supabase = createClient();
@@ -50,9 +51,9 @@ export default function ProductPage() {
     });
   }, [productId]);
 
-  const add = () => {
+  const add = async () => {
     if (!product || product.stock < 1) return;
-    addProductToCart(product, quantity);
+    await addItem(product, quantity);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   };

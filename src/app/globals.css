@@ -2505,3 +2505,29 @@ img {
     font-size: 14px;
   }
 }
+/* Shared-cart merge feedback */
+.cart-merge-notice {
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  top: 20px;
+  width: min(680px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 18px;
+  color: #f8f4e9;
+  background: #173f35;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 14px;
+  box-shadow: 0 18px 45px rgba(18, 45, 38, .24);
+}
+.cart-merge-notice p { margin: 0; line-height: 1.45; }
+.cart-merge-notice > div { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.cart-merge-notice a { color: #fff; font-weight: 750; text-decoration: underline; }
+.cart-merge-notice button { color: #f8f4e9; background: transparent; border: 0; cursor: pointer; }
+@media (max-width: 640px) {
+  .cart-merge-notice { align-items: flex-start; flex-direction: column; top: 12px; gap: 12px; }
+}
