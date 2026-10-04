@@ -2,7 +2,7 @@ import * as AuthSession from "expo-auth-session";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatNaira } from "../../lib/types";
 import { supabase } from "../../lib/supabase";
@@ -13,7 +13,7 @@ type Quote = { subtotalKobo: number; discountKobo: number; totalKobo: number; di
 const webUrl = process.env.EXPO_PUBLIC_WEB_URL || "https://ere-fidio.vercel.app";
 
 export default function CheckoutScreen() {
-  const { cart, user, clearCart } = useCart();
+  const { cart, user, clearCart, refresh } = useCart();
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState("");
@@ -22,6 +22,7 @@ export default function CheckoutScreen() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const quoteRequest = useRef(0);
   const items = useMemo(() => cart.map(({ id, quantity }) => ({ id, quantity })), [cart]);
   const fallbackTotal = cart.reduce((sum, item) => sum + item.price_kobo * item.quantity, 0);
@@ -91,16 +92,16 @@ export default function CheckoutScreen() {
   };
 
   if (!user) return (
-    <SafeAreaView style={styles.safe} edges={["left", "right"]}><View style={styles.centered}>
+    <SafeAreaView style={styles.safe} edges={["left", "right"]}><ScrollView contentContainerStyle={styles.centered} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void refresh().finally(() => setRefreshing(false)); }} tintColor={colors.terracotta} colors={[colors.terracotta]} />}>
       <Text style={styles.eyebrow}>KEEP YOUR CART</Text><Text style={styles.heading}>Sign in before checkout.</Text>
       <Text style={styles.copy}>We’ll combine this cart with games saved on your other devices.</Text>
       <Pressable style={styles.primary} onPress={() => router.push("/login")}><Text style={styles.primaryText}>Continue with Google</Text></Pressable>
-    </View></SafeAreaView>
+    </ScrollView></SafeAreaView>
   );
 
   return (
     <SafeAreaView style={styles.safe} edges={["left", "right"]}><KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void refresh().finally(() => setRefreshing(false)); }} tintColor={colors.terracotta} colors={[colors.terracotta]} />}>
         <Text style={styles.eyebrow}>THE FINAL STEP</Text><Text style={styles.heading}>Make it yours.</Text>
         <Text style={styles.copy}>Add your delivery details, then complete a Paystack test payment.</Text>
         <View style={styles.panel}><Text style={styles.sectionTitle}>Customer details</Text>
@@ -136,7 +137,7 @@ function formatDiscountPercent(quote: Quote) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.cream }, content: { padding: 18, paddingBottom: 38 }, centered: { padding: 24, paddingTop: 72 },
+  safe: { flex: 1, backgroundColor: colors.cream }, content: { padding: 18, paddingBottom: 38 }, centered: { flexGrow: 1, padding: 24, paddingTop: 72 },
   eyebrow: { color: colors.terracotta, fontSize: 11, fontWeight: "900", letterSpacing: 1.5 }, heading: { color: colors.forest, fontSize: 35, lineHeight: 41, fontWeight: "900", marginTop: 8 }, copy: { color: colors.muted, fontSize: 15, lineHeight: 23, marginTop: 10 },
   panel: { backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.border, borderRadius: 18, padding: 16, marginTop: 20 }, sectionTitle: { color: colors.forest, fontSize: 21, fontWeight: "900", marginBottom: 4 },
   fieldWrap: { marginTop: 14 }, label: { color: colors.ink, fontSize: 13, fontWeight: "800", marginBottom: 7 }, input: { backgroundColor: "white", color: colors.ink, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 12, fontSize: 16 }, multiline: { minHeight: 84, textAlignVertical: "top" },

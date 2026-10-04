@@ -159,6 +159,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     await loadCloud();
   }, [loadCloud, saveGuest]);
 
+  const refresh = useCallback(async () => {
+    if (userRef.current) {
+      await loadCloud();
+      return;
+    }
+    setCart(await readGuestCart());
+  }, [loadCloud]);
+
   const value = useMemo(() => ({
     cart,
     count: cart.reduce((sum, item) => sum + item.quantity, 0),
@@ -167,8 +175,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     addItem,
     setQuantity,
     clearCart,
-    refresh: loadCloud,
-  }), [addItem, cart, clearCart, loadCloud, loading, setQuantity, user]);
+    refresh,
+  }), [addItem, cart, clearCart, loading, refresh, setQuantity, user]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

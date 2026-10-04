@@ -1,11 +1,14 @@
 import { router } from "expo-router";
-import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { useCart } from "../../providers/CartProvider";
 import { colors } from "../../theme";
 import { formatNaira } from "../../lib/types";
 
 export default function CartScreen() {
-  const { cart, count, setQuantity, loading } = useCart();
+  const { cart, count, setQuantity, loading, refresh } = useCart();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => { setRefreshing(true); try { await refresh(); } finally { setRefreshing(false); } };
   const subtotal = cart.reduce((sum, item) => sum + item.price_kobo * item.quantity, 0);
   return (
     <SafeAreaView style={styles.safe}>
@@ -13,6 +16,7 @@ export default function CartScreen() {
         data={cart}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} tintColor={colors.terracotta} colors={[colors.terracotta]} />}
         ListHeaderComponent={<>
           <Text style={styles.eyebrow}>A GOOD CHOICE</Text>
           <Text style={styles.heading}>Your cart</Text>

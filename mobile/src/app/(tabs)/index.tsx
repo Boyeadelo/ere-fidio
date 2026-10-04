@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, TextInput, View } from "react-native";
 import { ProductCard } from "../../components/ProductCard";
 import { supabase } from "../../lib/supabase";
 import type { Platform, Product } from "../../lib/types";
@@ -11,17 +11,19 @@ export default function ShopScreen() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    supabase.from("products")
+  const loadProducts = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    setError("");
+    const { data, error: queryError } = await supabase.from("products")
       .select("id, title, platform, price_kobo, description, stock, image_url, created_at")
-      .eq("is_published", true).eq("is_archived", false).order("created_at", { ascending: false })
-      .then(({ data, error: queryError }) => {
-        if (queryError) setError("We couldn’t load the catalogue. Pull down to try again.");
-        setProducts((data as Product[] | null) ?? []);
-        setLoading(false);
-      });
+      .eq("is_published", true).eq("is_archived", false).order("created_at", { ascending: false });
+    if (queryError) setError("We couldn’t load the catalogue. Pull down to try again.");
+    setProducts((data as Product[] | null) ?? []);
+    setLoading(false); setRefreshing(false);
   }, []);
+  useEffect(() => { void loadProducts(); }, [loadProducts]);
 
   const visible = useMemo(() => products.filter((product) =>
     (platform === "All" || product.platform === platform) &&
@@ -34,6 +36,7 @@ export default function ShopScreen() {
         data={visible}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadProducts(true)} tintColor={colors.terracotta} colors={[colors.terracotta]} />}
         renderItem={({ item }) => <ProductCard product={item} />}
         ListHeaderComponent={<>
           <Text style={styles.eyebrow}>THE JOY OF THE PHYSICAL GAME</Text>

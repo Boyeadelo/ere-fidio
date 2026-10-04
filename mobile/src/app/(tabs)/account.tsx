@@ -1,14 +1,17 @@
 import { router } from "expo-router";
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { useCart } from "../../providers/CartProvider";
 import { colors } from "../../theme";
 
 export default function AccountScreen() {
-  const { user } = useCart();
+  const { user, refresh } = useCart();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => { setRefreshing(true); try { await supabase.auth.refreshSession(); await refresh(); } finally { setRefreshing(false); } };
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} tintColor={colors.terracotta} colors={[colors.terracotta]} />}>
         <Text style={styles.eyebrow}>YOUR ACCOUNT</Text>
         <Text style={styles.heading}>{user ? "You’re signed in." : "Take your cart everywhere."}</Text>
         <Text style={styles.copy}>{user ? user.email : "Use the same Google account as the website to sync cart changes in real time."}</Text>
@@ -17,7 +20,7 @@ export default function AccountScreen() {
         ) : (
           <Pressable style={styles.primary} onPress={() => router.push("/login")}><Text style={styles.primaryText}>Continue with Google</Text></Pressable>
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

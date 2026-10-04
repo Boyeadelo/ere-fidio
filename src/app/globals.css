@@ -2379,12 +2379,12 @@ img {
 .order-progress-intro > span:last-child { text-align: right; }
 .order-progress-intro small { color: var(--muted); }
 .order-progress-intro strong { color: var(--forest); font-size: 1.05rem; }
-.delivery-timeline { display: grid; grid-template-columns: repeat(6, 1fr); margin: 24px 0 0; }
-.timeline-step { position: relative; display: flex; gap: 10px; align-items: flex-start; color: var(--muted); }
-.timeline-step::after { content: ""; position: absolute; height: 2px; background: var(--border); left: 34px; right: 0; top: 15px; }
+.delivery-timeline { display: grid; grid-template-columns: 1fr; margin: 24px 0 0; }
+.timeline-step { position: relative; display: flex; gap: 12px; align-items: flex-start; min-height: 68px; color: var(--muted); }
+.timeline-step::after { content: ""; position: absolute; width: 2px; background: var(--border); left: 14px; top: 30px; bottom: 0; }
 .timeline-step:last-child::after { display: none; }
 .timeline-step i { position: relative; z-index: 1; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--paper); border: 2px solid var(--border); font-style: normal; font-weight: 900; flex: 0 0 auto; }
-.timeline-step span { display: grid; gap: 4px; padding-right: 10px; }
+.timeline-step span { display: grid; gap: 4px; padding-right: 10px; padding-top: 4px; }
 .timeline-step small { font-size: .72rem; line-height: 1.35; }
 .timeline-step.is-complete { color: var(--forest); }
 .timeline-step.is-complete i { background: var(--forest); border-color: var(--forest); color: white; }
@@ -2412,9 +2412,7 @@ img {
 @media (max-width: 800px) {
   .order-card-link { align-items: flex-start; }
   .order-card-summary { align-items: flex-end; flex-direction: column; gap: 7px; }
-  .delivery-timeline { grid-template-columns: 1fr; gap: 0; }
   .timeline-step { min-height: 72px; }
-  .timeline-step::after { width: 2px; height: auto; left: 14px; right: auto; top: 30px; bottom: 0; }
   .order-detail-grid { grid-template-columns: 1fr; }
   .order-detail-heading { align-items: flex-start; flex-direction: column; }
   .admin-order-main, .admin-order-detail-grid { grid-template-columns: 1fr; }

@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { supabase } from "../../../lib/supabase";
 import { formatNaira, type Product } from "../../../lib/types";
 import { useCart } from "../../../providers/CartProvider";
@@ -13,17 +13,20 @@ export default function GameScreen() {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { addItem } = useCart();
-  useEffect(() => {
+  const loadProduct = useCallback(async (isRefresh = false) => {
     if (!id) return;
-    supabase.from("products").select("id, title, platform, price_kobo, description, stock, image_url, created_at").eq("id", id).maybeSingle()
-      .then(({ data }) => { setProduct(data as Product | null); setLoading(false); });
+    if (isRefresh) setRefreshing(true);
+    const { data } = await supabase.from("products").select("id, title, platform, price_kobo, description, stock, image_url, created_at").eq("id", id).maybeSingle();
+    setProduct(data as Product | null); setLoading(false); setRefreshing(false);
   }, [id]);
+  useEffect(() => { void loadProduct(); }, [loadProduct]);
   if (loading) return <View style={styles.loader}><ActivityIndicator color={colors.terracotta} /></View>;
   if (!product) return <View style={styles.loader}><Text>Game not found.</Text></View>;
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadProduct(true)} tintColor={colors.terracotta} colors={[colors.terracotta]} />}>
         <View style={styles.art}>{product.image_url ? <Image source={{ uri: product.image_url }} style={styles.image} alt={`${product.title} cover`} /> : <Text style={styles.mark}>{product.platform}</Text>}</View>
         <Text style={styles.badge}>{product.platform} · DISC</Text>
         <Text style={styles.title}>{product.title}</Text>
