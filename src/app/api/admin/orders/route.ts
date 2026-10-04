@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 
 const schema = z.object({
   id: z.string().uuid(),
-  status: z.enum(["PENDING", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"]),
+  status: z.enum(["PAID", "PROCESSING", "PACKED", "DISPATCHED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"]),
 });
 
 export async function PATCH(request: Request) {

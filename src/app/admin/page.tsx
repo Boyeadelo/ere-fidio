@@ -5,13 +5,15 @@ import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import { formatNaira } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
+import { ADMIN_ORDER_STATUSES, orderStatusLabel } from "@/lib/orders";
 
 type Product = {
   id: string; title: string; slug: string; platform: "PS5" | "PS4" | "Xbox";
   description: string; image_url: string | null; price_kobo: number; stock: number;
   is_published: boolean; is_archived: boolean;
 };
-type Order = { id: string; customer_name: string; customer_email: string; status: string; total_kobo: number; paystack_reference: string; created_at: string };
+type OrderItem = { id: string; title_snapshot: string; platform_snapshot: string; unit_price_kobo: number; quantity: number };
+type Order = { id: string; customer_name: string; customer_email: string; customer_phone: string; delivery_address: string; status: string; subtotal_kobo: number; discount_kobo: number; total_kobo: number; discount_code: string | null; paystack_reference: string; created_at: string; order_items: OrderItem[] };
 type Discount = { id: string; code: string; percentage_off: number; is_active: boolean };
 type Overview = { products: Product[]; orders: Order[]; discounts: Discount[] };
 
@@ -102,7 +104,7 @@ export default function AdminPage() {
           </form>
           <div className="admin-list">{overview.products.map((product) => <article key={product.id}><span><strong>{product.title}</strong><small>{product.platform} · {formatNaira(product.price_kobo)} · {product.stock} in stock</small></span><span className={product.is_published && !product.is_archived ? "status-pill active" : "status-pill"}>{product.is_archived ? "Archived" : product.is_published ? "Live" : "Draft"}</span><button className="secondary-button" onClick={() => setEditing(product)}>Edit</button></article>)}</div>
         </div>}
-        {active === "orders" && <div className="admin-list order-list">{overview.orders.map((order) => <article key={order.id}><span><strong>{order.customer_name}</strong><small>{order.customer_email} · {new Date(order.created_at).toLocaleDateString("en-NG")}</small><small>{order.paystack_reference}</small></span><strong>{formatNaira(order.total_kobo)}</strong><select value={order.status} onChange={(event) => updateOrder(order.id, event.target.value)}>{["PENDING","PAID","PROCESSING","SHIPPED","DELIVERED","CANCELLED"].map((status) => <option key={status}>{status}</option>)}</select></article>)}</div>}
+        {active === "orders" && <div className="admin-list admin-order-list">{overview.orders.map((order) => <article key={order.id} className="admin-order-card"><div className="admin-order-heading"><span><strong>Order #{order.id.slice(0, 8)} · {order.customer_name}</strong><small>{order.customer_email} · {order.customer_phone}</small><small>{new Date(order.created_at).toLocaleString("en-NG")} · {order.paystack_reference}</small></span><strong>{formatNaira(order.total_kobo)}</strong><label>Delivery stage<select value={order.status === "SHIPPED" ? "DISPATCHED" : order.status} onChange={(event) => updateOrder(order.id, event.target.value)}>{ADMIN_ORDER_STATUSES.map((status) => <option key={status} value={status}>{orderStatusLabel(status)}</option>)}</select></label></div><div className="admin-order-details"><p><b>Deliver to:</b> {order.delivery_address}</p><p><b>Games:</b> {order.order_items.map((item) => `${item.title_snapshot} × ${item.quantity}`).join(", ")}</p>{order.discount_code && <p><b>Discount:</b> {order.discount_code} · −{formatNaira(order.discount_kobo)}</p>}</div></article>)}</div>}
         {active === "discounts" && <div className="admin-grid"><form className="admin-form" onSubmit={saveDiscount}><h2>Add or update a code</h2><label>Code<input name="code" required placeholder="WELCOME10" /></label><label>Percentage off<input name="percentage_off" type="number" min="1" max="100" required placeholder="10" /></label><label className="checkbox-label"><input name="is_active" type="checkbox" defaultChecked /> Active</label><button className="primary-button" type="submit">Save discount</button></form><div className="admin-list">{overview.discounts.map((discount) => <article key={discount.id}><span><strong>{discount.code}</strong><small>{discount.percentage_off}% off</small></span><span className={discount.is_active ? "status-pill active" : "status-pill"}>{discount.is_active ? "Active" : "Inactive"}</span></article>)}</div></div>}
       </>}
     </section><StoreFooter />

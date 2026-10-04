@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   if (!access) return NextResponse.json({ error: "Administrator access required." }, { status: 403 });
   const [products, orders, discounts] = await Promise.all([
     access.admin.from("products").select("*").order("created_at", { ascending: false }),
-    access.admin.from("orders").select("id, customer_name, customer_email, status, total_kobo, paystack_reference, created_at").order("created_at", { ascending: false }).limit(50),
+    access.admin.from("orders").select("id, customer_name, customer_email, customer_phone, delivery_address, status, subtotal_kobo, discount_kobo, total_kobo, discount_code, paystack_reference, created_at, order_items(id, title_snapshot, platform_snapshot, unit_price_kobo, quantity)").order("created_at", { ascending: false }).limit(50),
     access.admin.from("discount_codes").select("id, code, percentage_off, is_active, expires_at, created_at").order("created_at", { ascending: false }),
   ]);
   const error = products.error || orders.error || discounts.error;
