@@ -42,13 +42,14 @@ export default function OrderDetailPage() {
   const journeyLabel = order.status === "DELIVERED" ? "Order-to-delivery time" : "Time since order";
 
   return <main className="site-shell"><StoreHeader /><section className="store-container account-page order-detail-page">
-    <a href="/account/orders">← Back to orders</a><p className="design-eyebrow">ORDER #{order.id.slice(0, 8)}</p>
-    <div className="order-detail-heading"><span><h1>{orderStatusLabel(order.status)}</h1><p>Placed {new Date(order.created_at).toLocaleString("en-NG")} · {journeyLabel}: {formatDuration(order.created_at, deliveredAt)}</p></span><strong>{formatNaira(order.total_kobo)}</strong></div>
+    <a className="order-back-link" href="/account/orders">← Back to orders</a>
+    <header className="order-detail-heading"><span><p className="design-eyebrow">ORDER #{order.id.slice(0, 8)}</p><h1>{orderStatusLabel(order.status)}</h1><p>Placed {new Date(order.created_at).toLocaleString("en-NG")}</p></span><span className="order-total-block"><small>Total paid</small><strong>{formatNaira(order.total_kobo)}</strong></span></header>
+    <section className="order-progress-panel"><div className="order-progress-intro"><span><small>Delivery progress</small><strong>{orderStatusLabel(order.status)}</strong></span><span><small>{journeyLabel}</small><strong>{formatDuration(order.created_at, deliveredAt)}</strong></span></div>
     {order.status === "CANCELLED" ? <p className="admin-message">This order was cancelled.</p> : <div className="delivery-timeline">{DELIVERY_STAGES.map((stage, index) => {
       const event = history.find((entry) => normalizeDeliveryStatus(entry.status) === stage);
       const complete = index <= currentIndex;
       return <div className={complete ? "timeline-step is-complete" : "timeline-step"} key={stage}><i>{complete ? "✓" : index + 1}</i><span><strong>{orderStatusLabel(stage)}</strong><small>{event ? new Date(event.created_at).toLocaleString("en-NG") : "Pending"}</small>{event?.note && <small>{event.note}</small>}</span></div>;
-    })}</div>}
+    })}</div>}</section>
     <div className="order-detail-grid"><section className="order-detail-card"><h2>Games</h2>{items.map((item) => <div className="order-line" key={item.id}><span><strong>{item.title_snapshot}</strong><small>{item.platform_snapshot} · Qty {item.quantity}</small></span><b>{formatNaira(item.unit_price_kobo * item.quantity)}</b></div>)}</section>
       <section className="order-detail-card"><h2>Payment summary</h2><Summary label="Subtotal" value={formatNaira(order.subtotal_kobo)} />{order.discount_kobo > 0 && <Summary label={`Discount${order.discount_code ? ` · ${order.discount_code}` : ""}`} value={`−${formatNaira(order.discount_kobo)}`} />}<Summary label="Total paid" value={formatNaira(order.total_kobo)} strong /><Summary label="Paystack reference" value={order.paystack_reference} /></section>
       <section className="order-detail-card"><h2>Delivery details</h2><p><strong>{order.customer_name}</strong><br />{order.customer_email}<br />{order.customer_phone}</p><p>{order.delivery_address}</p></section>

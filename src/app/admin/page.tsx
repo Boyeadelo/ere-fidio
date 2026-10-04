@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import StoreHeader from "@/components/StoreHeader";
+import AdminHeader from "@/components/AdminHeader";
 import StoreFooter from "@/components/StoreFooter";
 import { formatNaira } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
@@ -82,7 +82,7 @@ export default function AdminPage() {
 
   const productDefaults = editing || blankProduct;
   return <main className="site-shell">
-    <StoreHeader />
+    <AdminHeader />
     <section className="store-container admin-page">
       <p className="design-eyebrow">STORE OPERATIONS</p><h1>Admin dashboard</h1><p>Manage the demonstration catalogue, discounts and orders.</p>
       {message && <p className="admin-message" role="status">{message}</p>}
@@ -104,7 +104,14 @@ export default function AdminPage() {
           </form>
           <div className="admin-list">{overview.products.map((product) => <article key={product.id}><span><strong>{product.title}</strong><small>{product.platform} · {formatNaira(product.price_kobo)} · {product.stock} in stock</small></span><span className={product.is_published && !product.is_archived ? "status-pill active" : "status-pill"}>{product.is_archived ? "Archived" : product.is_published ? "Live" : "Draft"}</span><button className="secondary-button" onClick={() => setEditing(product)}>Edit</button></article>)}</div>
         </div>}
-        {active === "orders" && <div className="admin-list admin-order-list">{overview.orders.map((order) => <article key={order.id} className="admin-order-card"><div className="admin-order-heading"><span><strong>Order #{order.id.slice(0, 8)} · {order.customer_name}</strong><small>{order.customer_email} · {order.customer_phone}</small><small>{new Date(order.created_at).toLocaleString("en-NG")} · {order.paystack_reference}</small></span><strong>{formatNaira(order.total_kobo)}</strong><label>Delivery stage<select value={order.status === "SHIPPED" ? "DISPATCHED" : order.status} onChange={(event) => updateOrder(order.id, event.target.value)}>{ADMIN_ORDER_STATUSES.map((status) => <option key={status} value={status}>{orderStatusLabel(status)}</option>)}</select></label></div><div className="admin-order-details"><p><b>Deliver to:</b> {order.delivery_address}</p><p><b>Games:</b> {order.order_items.map((item) => `${item.title_snapshot} × ${item.quantity}`).join(", ")}</p>{order.discount_code && <p><b>Discount:</b> {order.discount_code} · −{formatNaira(order.discount_kobo)}</p>}</div></article>)}</div>}
+        {active === "orders" && <div className="admin-list admin-order-list">{overview.orders.map((order) => <article key={order.id} className="admin-order-card">
+          <div className="admin-order-main">
+            <span><strong>Order #{order.id.slice(0, 8)} · {order.customer_name}</strong><small>{order.customer_email} · {order.customer_phone}</small><small>{new Date(order.created_at).toLocaleString("en-NG")} · {order.paystack_reference}</small></span>
+            <strong className="admin-order-total">{formatNaira(order.total_kobo)}</strong>
+            <label>Delivery stage<select value={order.status === "SHIPPED" ? "DISPATCHED" : order.status} onChange={(event) => updateOrder(order.id, event.target.value)}>{ADMIN_ORDER_STATUSES.map((status) => <option key={status} value={status}>{orderStatusLabel(status)}</option>)}</select></label>
+          </div>
+          <details className="admin-order-details"><summary>View order details</summary><div className="admin-order-detail-grid"><p><b>Deliver to</b><span>{order.delivery_address}</span></p><p><b>Games</b><span>{order.order_items.map((item) => `${item.title_snapshot} × ${item.quantity}`).join(", ")}</span></p><p><b>Payment</b><span>Subtotal {formatNaira(order.subtotal_kobo)}{order.discount_code ? ` · ${order.discount_code} −${formatNaira(order.discount_kobo)}` : " · No discount"}</span></p></div></details>
+        </article>)}</div>}
         {active === "discounts" && <div className="admin-grid"><form className="admin-form" onSubmit={saveDiscount}><h2>Add or update a code</h2><label>Code<input name="code" required placeholder="WELCOME10" /></label><label>Percentage off<input name="percentage_off" type="number" min="1" max="100" required placeholder="10" /></label><label className="checkbox-label"><input name="is_active" type="checkbox" defaultChecked /> Active</label><button className="primary-button" type="submit">Save discount</button></form><div className="admin-list">{overview.discounts.map((discount) => <article key={discount.id}><span><strong>{discount.code}</strong><small>{discount.percentage_off}% off</small></span><span className={discount.is_active ? "status-pill active" : "status-pill"}>{discount.is_active ? "Active" : "Inactive"}</span></article>)}</div></div>}
       </>}
     </section><StoreFooter />

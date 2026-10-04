@@ -1,6 +1,6 @@
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
 import { formatNaira } from "../../lib/types";
@@ -14,42 +14,44 @@ export default function OrdersScreen() {
   const { user } = useCart();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState("");
 
+  const loadOrders = useCallback(async (isRefresh = false) => {
+    if (!user) return;
+    if (isRefresh) setRefreshing(true);
+    const { data, error } = await supabase
+      .from("orders")
+      .select("id, status, total_kobo, created_at, paystack_reference")
+      .order("created_at", { ascending: false });
+    setOrders(data || []);
+    setMessage(error ? "We couldn’t load your orders." : data?.length ? "" : "No orders yet.");
+    setLoading(false);
+    setRefreshing(false);
+  }, [user]);
+
   useEffect(() => {
-    let active = true;
     if (!user) {
       setOrders([]);
       setLoading(false);
       setMessage("Sign in to view orders placed with your account.");
-      return () => { active = false; };
+      return;
     }
-
-    const loadOrders = async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, status, total_kobo, created_at, paystack_reference")
-        .order("created_at", { ascending: false });
-      if (!active) return;
-      setOrders(data || []);
-      setMessage(error ? "We couldn’t load your orders." : data?.length ? "" : "No orders yet.");
-      setLoading(false);
-    };
 
     setLoading(true);
     void loadOrders();
     const channel = supabase
       .channel(`mobile-orders:${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, loadOrders)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, () => { void loadOrders(); })
       .subscribe();
 
     return () => {
-      active = false;
       void supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [loadOrders, user]);
 
   return <SafeAreaView style={styles.safe} edges={["left", "right"]}><FlatList data={orders} keyExtractor={(item) => item.id} contentContainerStyle={styles.content}
+    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadOrders(true)} tintColor={colors.terracotta} colors={[colors.terracotta]} />}
     ListHeaderComponent={<><Text style={styles.eyebrow}>YOUR ACCOUNT</Text><Text style={styles.heading}>Your orders</Text><Text style={styles.copy}>Track delivery progress and open an order for full details.</Text>{loading && <ActivityIndicator color={colors.terracotta} />}{message && <Text style={styles.message}>{message}</Text>}{!user && <Pressable style={styles.primary} onPress={() => router.push("/login")}><Text style={styles.primaryText}>Continue with Google</Text></Pressable>}</>}
     renderItem={({ item }) => <Pressable style={styles.card} onPress={() => router.push(`/order/${item.id}`)}><View><Text style={styles.title}>Order #{item.id.slice(0, 8)}</Text><Text style={styles.meta}>{new Date(item.created_at).toLocaleDateString("en-NG")} · {orderStatusLabel(item.status)}</Text></View><View style={styles.right}><Text style={styles.total}>{formatNaira(item.total_kobo)}</Text><Text style={styles.arrow}>›</Text></View></Pressable>}
   /></SafeAreaView>;

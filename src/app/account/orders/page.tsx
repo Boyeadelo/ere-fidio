@@ -27,12 +27,10 @@ export default function OrdersPage() {
     <p className="design-eyebrow">YOUR ACCOUNT</p><h1>Your orders</h1>
     <p>Open an order to view its games, payment, delivery details and progress.</p>
     {message && <p>{message}</p>}
-    <div className="admin-list order-list">{orders.map((order) =>
+    <div className="admin-list order-list customer-order-list">{orders.map((order) =>
       <a className="order-card-link" href={`/account/orders/${order.id}`} key={order.id}>
-        <span><strong>Order #{order.id.slice(0, 8)}</strong><small>{new Date(order.created_at).toLocaleDateString("en-NG")} · {order.paystack_reference}</small></span>
-        <strong>{formatNaira(order.total_kobo)}</strong>
-        <span className="status-pill active">{orderStatusLabel(order.status)}</span>
-        <b aria-hidden="true">›</b>
+        <span className="order-card-copy"><strong>Order #{order.id.slice(0, 8)}</strong><small>{new Date(order.created_at).toLocaleDateString("en-NG")} · {order.paystack_reference}</small></span>
+        <span className="order-card-summary"><strong>{formatNaira(order.total_kobo)}</strong><span className="status-pill active">{orderStatusLabel(order.status)}</span><b aria-hidden="true">›</b></span>
       </a>
     )}</div>
   </section><StoreFooter /></main>;
