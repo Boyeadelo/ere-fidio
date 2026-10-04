@@ -60,9 +60,18 @@ export default function CheckoutScreen() {
       const initialized = await initializeResponse.json();
       if (!initializeResponse.ok) throw new Error(initialized.error || "Could not start Paystack.");
       const payment = await WebBrowser.openAuthSessionAsync(initialized.authorizationUrl, callbackUrl);
-      if (payment.type !== "success" || !payment.url) { setStatus("Payment was cancelled. Your cart is unchanged."); return; }
-      const returnedUrl = new URL(payment.url);
-      const reference = returnedUrl.searchParams.get("reference") || returnedUrl.searchParams.get("trxref");
+      let reference = initialized.reference as string;
+      if (payment.type === "success" && payment.url) {
+        const returnedUrl = new URL(payment.url);
+        reference = returnedUrl.searchParams.get("reference") || returnedUrl.searchParams.get("trxref") || reference;
+      } else {
+        const verifyResponse = await fetch(`${webUrl}/api/paystack/verify?reference=${encodeURIComponent(reference)}`);
+        const verification = await verifyResponse.json();
+        if (!verifyResponse.ok || verification.status !== "success") {
+          setStatus("Payment was cancelled. Your cart is unchanged.");
+          return;
+        }
+      }
       if (!reference) throw new Error("Paystack did not return a payment reference.");
       setStatus("Confirming payment and placing your order…");
       const { data } = await supabase.auth.getSession();
