@@ -5,13 +5,18 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const email = typeof body.email === "string" ? body.email.trim() : "";
-    const defaultCallbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin}/checkout`;
+    const appOrigin = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+    const defaultCallbackUrl = `${appOrigin}/checkout`;
     let callbackUrl = defaultCallbackUrl;
     if (typeof body.callbackUrl === "string") {
       const requestedCallback = new URL(body.callbackUrl);
       const isExpoTunnel = requestedCallback.protocol === "exp:" && requestedCallback.hostname.endsWith(".exp.direct");
       const isNativeApp = requestedCallback.protocol === "erefidio:";
-      if (isExpoTunnel || isNativeApp) callbackUrl = requestedCallback.toString();
+      if (isExpoTunnel || isNativeApp) {
+        const returnPage = new URL("/mobile-payment-return", appOrigin);
+        returnPage.searchParams.set("returnTo", requestedCallback.toString());
+        callbackUrl = returnPage.toString();
+      }
     }
 
     if (!email) {
