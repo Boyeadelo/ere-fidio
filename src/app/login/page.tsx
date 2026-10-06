@@ -22,7 +22,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const browserOrigin = window.location.origin.replace("0.0.0.0", "172.19.122.9");
+      const browserOrigin = getWebOrigin();
       document.cookie = `oauth_next=${encodeURIComponent(nextPath)}; Path=/; Max-Age=600; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
       const { error: signInError } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -50,4 +50,10 @@ export default function LoginPage() {
       {error && <p className="feedback error" role="alert">{error}</p>}
     </main>
   );
+}
+
+function getWebOrigin() {
+  const { hostname, origin } = window.location;
+  const isLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
+  return isLocal ? origin.replace("0.0.0.0", "172.19.122.9") : "https://ere-fidio.vercel.app";
 }

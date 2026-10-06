@@ -5,7 +5,11 @@ import { cookies } from "next/headers";
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const { searchParams } = requestUrl;
-  const origin = requestUrl.origin.replace("0.0.0.0", "172.19.122.9");
+  const hostname = requestUrl.hostname;
+  const isLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
+  const origin = isLocal
+    ? requestUrl.origin.replace("0.0.0.0", "172.19.122.9")
+    : "https://ere-fidio.vercel.app";
   const code = searchParams.get("code");
   const cookieStore = await cookies();
   const savedNext = cookieStore.get("oauth_next")?.value;
