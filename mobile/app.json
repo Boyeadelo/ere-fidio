@@ -7,8 +7,13 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "plugins": ["expo-router", "expo-web-browser"],
-    "experiments": { "typedRoutes": true },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.boyeadelo.erefidio"
@@ -26,9 +31,12 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-router",
-      "expo-web-browser"
-    ]
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "970ff068-ac59-4d42-86df-e6916556dbd0"
+      }
+    },
+    "owner": "oluboye"
   }
 }
