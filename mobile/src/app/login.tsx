@@ -20,7 +20,11 @@ export default function LoginScreen() {
     try {
       const { data, error: startError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo, skipBrowserRedirect: true },
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+          queryParams: { prompt: "select_account" },
+        },
       });
       if (startError) throw startError;
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);

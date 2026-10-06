@@ -26,7 +26,10 @@ export default function LoginPage() {
       document.cookie = `oauth_next=${encodeURIComponent(nextPath)}; Path=/; Max-Age=600; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
       const { error: signInError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${browserOrigin}/auth/callback` },
+        options: {
+          redirectTo: `${browserOrigin}/auth/callback`,
+          queryParams: { prompt: "select_account" },
+        },
       });
       if (signInError) setError(signInError.message);
     } catch {
